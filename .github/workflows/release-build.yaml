@@ -124,16 +124,16 @@ jobs:
 
       - name: Build project
         run: |
-          mkdir -p nae-module-maven-plugin-${{ steps.getVersion.outputs.version }}
-          cp target/nae-module-maven-plugin-${{ steps.getVersion.outputs.version }}.jar nae-module-maven-plugin-${{ steps.getVersion.outputs.version }}
-          cp target/plugin-enhanced.xml  nae-module-maven-plugin-${{ steps.getVersion.outputs.version }}
-          zip -r nae-module-maven-plugin-${{ steps.getVersion.outputs.version }}.zip nae-module-maven-plugin-${{ steps.getVersion.outputs.version }}
+          mkdir -p nae-plugin-maven-plugin-${{ steps.getVersion.outputs.version }}
+          cp target/nae-plugin-maven-plugin-${{ steps.getVersion.outputs.version }}.jar nae-plugin-maven-plugin-${{ steps.getVersion.outputs.version }}
+          cp target/plugin-enhanced.xml  nae-plugin-maven-plugin-${{ steps.getVersion.outputs.version }}
+          zip -r nae-plugin-maven-plugin-${{ steps.getVersion.outputs.version }}.zip nae-plugin-maven-plugin-${{ steps.getVersion.outputs.version }}
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: nae-module-maven-plugin-${{ steps.getVersion.outputs.version }}.zip
-          asset_name: nae-module-maven-plugin-${{ steps.getVersion.outputs.version }}.zip
+          file: nae-plugin-maven-plugin-${{ steps.getVersion.outputs.version }}.zip
+          asset_name: nae-plugin-maven-plugin-${{ steps.getVersion.outputs.version }}.zip
           tag: ${{ github.ref }}
           overwrite: true

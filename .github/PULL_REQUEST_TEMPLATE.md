@@ -90,7 +90,7 @@ You can now safely **delete all between two horizontal lines**, so the instructi
     - [ ] Unit tests
     - [ ] Integration tests
 - [ ] I have checked my contribution with code analysis tools:
-    - [ ] [SonarCloud](https://sonarcloud.io/project/overview?id=netgrif_nae-module-maven-plugin)
+    - [ ] [SonarCloud](https://sonarcloud.io/project/overview?id=netgrif_nae-plugin-maven-plugin)
     - [ ] [Snyk](https://app.snyk.io/org/netgrif/)
 - [ ] I have made corresponding changes to the documentation:
     - [ ] Developer documentation

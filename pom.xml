@@ -11,7 +11,7 @@
 
     <name>nae-plugin-maven-plugin</name>
     <description>Maven plugin for building NAE modules</description>
-    <url>https://netgrif.github.io/nae-module-maven-plugin</url>
+    <url>https://netgrif.github.io/nae-plugin-maven-plugin</url>
 
     <licenses>
         <license>
@@ -186,7 +186,7 @@
                 <artifactId>maven-plugin-plugin</artifactId>
                 <version>3.13.1</version>
                 <configuration>
-                    <goalPrefix>nae-module-maven-plugin</goalPrefix>
+                    <goalPrefix>nae-plugin-maven-plugin</goalPrefix>
                     <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
                 </configuration>
                 <executions>
