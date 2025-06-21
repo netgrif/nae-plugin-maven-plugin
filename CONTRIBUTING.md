@@ -1,6 +1,6 @@
-# How to contribute to NAE Module Maven Plugin
+# How to contribute to NAE plugin Maven Plugin
 
-Maven plugin for building NAE modules 
+Maven plugin for building NAE plugins 
 
 ## Ways you can contribute
 

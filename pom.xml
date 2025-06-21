@@ -10,7 +10,7 @@
     <packaging>maven-plugin</packaging>
 
     <name>nae-plugin-maven-plugin</name>
-    <description>Maven plugin for building NAE modules</description>
+    <description>Maven plugin for building NAE plugins</description>
     <url>https://netgrif.github.io/nae-plugin-maven-plugin</url>
 
     <licenses>
