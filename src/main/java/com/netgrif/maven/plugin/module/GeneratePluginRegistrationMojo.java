@@ -310,17 +310,18 @@ public class GeneratePluginRegistrationMojo extends AbstractMojo {
 
             for (ClassInfo ci : scanResult.getClassesWithAnnotation("com.netgrif.application.engine.adapter.spring.plugin.annotations.EntryPoint")) {
                 entryPointClasses.add(ci);
-                String entryPointName = ci.getAnnotationInfo("com.netgrif.application.engine.adapter.spring.plugin.annotations.EntryPoint")
-                        .getParameterValues().getValue("value").toString();
-
+                Object entryPointAnnotationValue = ci.getAnnotationInfo("com.netgrif.application.engine.adapter.spring.plugin.annotations.EntryPoint")
+                        .getParameterValues().getValue("value");
+                String entryPointName = entryPointAnnotationValue == null ? ci.getSimpleName() : entryPointAnnotationValue.toString();
                 getLog().info("Found @EntryPoint: " + ci.getName() + " (entryPointName = \"" + entryPointName + "\", package = " + ci.getPackageName() + ")");
 
                 Map<String, MethodDTO> methods = new LinkedHashMap<>();
 
                 for (MethodInfo mi : ci.getDeclaredMethodInfo()) {
                     if (mi.hasAnnotation("com.netgrif.application.engine.adapter.spring.plugin.annotations.EntryPointMethod")) {
-                        String methodName = mi.getAnnotationInfo("com.netgrif.application.engine.adapter.spring.plugin.annotations.EntryPointMethod")
-                                .getParameterValues().getValue("name").toString();
+                        Object entryPointMethodAnnotationValue = mi.getAnnotationInfo("com.netgrif.application.engine.adapter.spring.plugin.annotations.EntryPointMethod")
+                                .getParameterValues().getValue("name");
+                        String methodName = entryPointMethodAnnotationValue == null ? mi.getName() : entryPointMethodAnnotationValue.toString();
                         List<String> argTypes = new ArrayList<>();
                         Arrays.stream(mi.getParameterInfo()).forEach(param -> argTypes.add(param.getTypeDescriptor().toString()));
                         String returnType = mi.getTypeDescriptor().getResultType().toString();
@@ -451,24 +452,23 @@ public class GeneratePluginRegistrationMojo extends AbstractMojo {
 
         entryPoints.forEach((epName, ep) -> {
             sb.append("\n        // EntryPoint: ").append(ep.name).append("\n");
-            sb.append("        entryPoints.put(\"").append(ep.name).append("\", new EntryPoint(")
-                    .append("\"").append(ep.name).append("\", Map.of(\n");
-
+            sb.append("        Map<String, Method> ").append(ep.name).append("Methods = new LinkedHashMap<>();\n");
             Iterator<Map.Entry<String, MethodDTO>> mit = ep.methods.entrySet().iterator();
             while (mit.hasNext()) {
                 Map.Entry<String, MethodDTO> mEntry = mit.next();
                 MethodDTO m = mEntry.getValue();
-                sb.append("                \"").append(m.name).append("\", new Method(\"")
-                        .append(m.name).append("\", java.util.List.of(");
+                sb.append("        ").append(ep.name).append("Methods.put(\"").append(m.name).append("\", new Method(\"")
+                        .append(m.name).append("\",\n                java.util.List.of(");
                 for (int i = 0; i < m.argTypes.size(); i++) {
                     sb.append("\"").append(m.argTypes.get(i)).append("\"");
                     if (i < m.argTypes.size() - 1) sb.append(", ");
                 }
-                sb.append("), \"").append(m.returnType).append("\", java.util.List.of())");
-                if (mit.hasNext()) sb.append(",");
+                sb.append("),\n                \"").append(m.returnType).append("\", java.util.List.of()));");
                 sb.append("\n");
             }
-            sb.append("        ), \"").append(ep.pluginName).append("\"));\n");
+            sb.append("        entryPoints.put(\"").append(ep.name).append("\", new EntryPoint(")
+                    .append("\"").append(ep.name).append("\", ").append(ep.name).append("Methods, ");
+            sb.append("\"").append(ep.pluginName).append("\"));\n");
         });
 
         sb.append("\n\n        // METADATA:\n");
