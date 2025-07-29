@@ -439,7 +439,10 @@ public class GeneratePluginRegistrationMojo extends AbstractMojo {
             sb.append("import org.springframework.context.annotation.ComponentScan;\n");
         }
         sb.append("\n");
-        sb.append("@Configuration\n");
+        sb.append("@Configuration(value = \"");
+        sb.append(pluginRegistrationName());
+        sb.append("_PluginRegistrationConfiguration");
+        sb.append("\")\n");
         if (componentScanBasePackage != null && !componentScanBasePackage.isBlank()) {
             sb.append("@ComponentScan(\"").append(componentScanBasePackage).append("\")\n");
         }
