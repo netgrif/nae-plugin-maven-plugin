@@ -8,7 +8,7 @@ Maven plugin for building NAE Plugin
 <plugin>
     <groupId>com.netgrif</groupId>
     <artifactId>nae-plugin-maven-plugin</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </plugin>
 ```
 
