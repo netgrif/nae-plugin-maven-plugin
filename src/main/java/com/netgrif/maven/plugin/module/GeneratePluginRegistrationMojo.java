@@ -4,19 +4,24 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.MethodInfo;
 import io.github.classgraph.ScanResult;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
  * <h2>Netgrif Plugin Registration Generator (Maven Mojo)</h2>
@@ -99,7 +104,11 @@ import java.util.*;
  * @author Netgrif team, plugin author
  * @since 1.0.0
  */
-@Mojo(name = "generate-plugin-registration", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
+@Mojo(
+        name = "generate-plugin-registration",
+        defaultPhase = LifecyclePhase.PROCESS_CLASSES,
+        requiresDependencyResolution = ResolutionScope.COMPILE,
+        threadSafe = true)
 public class GeneratePluginRegistrationMojo extends AbstractMojo {
 
     /**
@@ -115,6 +124,12 @@ public class GeneratePluginRegistrationMojo extends AbstractMojo {
      */
     @Component
     private MavenProject project;
+
+    @Component
+    private MavenSession session;
+
+    @Component
+    private BuildPluginManager pluginManager;
 
     /**
      * Specifies the base package to be scanned for discovering entry points in the plugin.
@@ -198,6 +213,24 @@ public class GeneratePluginRegistrationMojo extends AbstractMojo {
     @Parameter(property = "apiVersion")
     private String apiVersion;
 
+    /**
+     * Indicates whether the source files should be forced to recompile during the build process.
+     * By default, this is set to `false` to avoid unnecessary recompilation.
+     * Set it to `true` if modifications to the source files should trigger recompilation,
+     * even if no changes are detected by the build system.
+     */
+    @Parameter(property = "recompileSources", defaultValue = "false")
+    private Boolean recompileSources;
+
+    /**
+     * The directory path where the generated source files are stored.
+     * This field represents the base directory used for storing generated Java files
+     * or other resources that are created during the plugin registration process.
+     * It is typically set up by the Maven Mojo as part of its execution workflow
+     * and is added to the project's source roots for subsequent compilation.
+     */
+    private String generatedSourceDir;
+
     static class MethodDTO {
         String name;
         List<String> argTypes;
@@ -222,15 +255,51 @@ public class GeneratePluginRegistrationMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * Executes the Maven Mojo to generate plugin registration configurations, manage
+     * compilation goals, and integrate generated files into the build process. This
+     * method is responsible for:
+     * <p>
+     * 1. Setting up the directory for generated source files.
+     * 2. Generating a fully qualified class name (FQCN) for the plugin registration
+     * configuration.
+     * 3. If the FQCN is created, generating Spring Boot auto-configuration metadata
+     * to support plugin auto-detection.
+     * 4. Ensuring the Maven Compiler Plugin is appropriately configured and its
+     * compile goal is executed.
+     *
+     * @throws MojoExecutionException if an error occurs during plugin registration generation,
+     *                                creation of the necessary directories, or the execution
+     *                                of the Maven Compiler Plugin goal.
+     */
     @Override
     public void execute() throws MojoExecutionException {
         try {
+            generatedSourceDir = project.getBuild().getDirectory() + "/generated-sources/plugin";
             String fqcn = generatePluginRegistrationConfiguration();
             if (fqcn != null) {
                 generateSpringAutoConfigurationImports(fqcn);
             }
         } catch (IOException e) {
             throw new MojoExecutionException("Cannot generate PluginRegistrationConfigurationImpl", e);
+        }
+
+        if (recompileSources != null && recompileSources) {
+            getLog().info("Forcing sources to recompile with generated classes");
+            Plugin mavenCompilePlugin = project.getBuild().getPlugins().stream()
+                    .filter(p -> p.getGroupId().equals("org.apache.maven.plugins") && p.getArtifactId().equals("maven-compiler-plugin"))
+                    .findFirst().orElse(null);
+            if (mavenCompilePlugin == null) {
+                mavenCompilePlugin = plugin("org.apache.maven.plugins", "maven-compiler-plugin");
+            }
+            executeMojo(
+                    mavenCompilePlugin,
+                    goal("compile"),
+                    configuration(
+                            element("useIncrementalCompilation", "true")
+                    ),
+                    executionEnvironment(project, session, pluginManager)
+            );
         }
     }
 
@@ -286,7 +355,6 @@ public class GeneratePluginRegistrationMojo extends AbstractMojo {
     private String generatePluginRegistrationConfiguration() throws IOException {
         String className = "PluginRegistrationConfigurationImpl";
         String detectedPackage = (generatedPackage != null && !generatedPackage.isBlank()) ? generatedPackage : null;
-        String generatedSourceDir = project.getBuild().getDirectory() + "/generated-sources/plugin";
 
         String pluginNameValue = getRegistrationName();
         String pluginVersionValue = getApiVersion();
